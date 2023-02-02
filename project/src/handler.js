@@ -17,7 +17,10 @@ const addBook = (request, h) => {
   const id = nanoid(16);
   if (pageCount === readPage) {
     finished = true;
+  } else {
+    finished = false;
   }
+
   const insertedAt = new Date().toISOString();
   const updatedAt = insertedAt;
 
@@ -36,7 +39,7 @@ const addBook = (request, h) => {
     updatedAt,
   };
 
-  if (name === '') {
+  if (name === undefined) {
     const response = h.response({
       status: 'fail',
       message: 'Gagal menambahkan buku. Mohon isi nama buku',
@@ -74,19 +77,46 @@ const addBook = (request, h) => {
   return response;
 };
 
-const getAllBooks = () => {
+const getAllBooks = (request, h) => {
+  const { reading } = request.query;
+
+  if (reading !== undefined) {
+    if (reading === 0) {
+      const readBook = books.filter((b) => b.reading === false);
+      const formatBook = readBook.map(({ id, name, publisher }) => ({ id, name, publisher }));
+
+      const response = h.response({
+        status: 'success',
+        data: {
+          books: formatBook,
+        },
+      });
+      return response;
+    }
+    const readBook = books.filter((b) => b.reading === true);
+    const formatBook = readBook.map(({ id, name, publisher }) => ({ id, name, publisher }));
+
+    const response = h.response({
+      status: 'success',
+      data: {
+        books: formatBook,
+      },
+    });
+    return response;
+  }
+
   const formatBook = books.map(({ id, name, publisher }) => ({ id, name, publisher }));
   return {
     status: 'success',
     data: {
-      formatBook,
+      books: formatBook,
     },
   };
 };
 
 const getBooksById = (request, h) => {
   const { id } = request.params;
-  const book = books.filter((n) => n.id === id)[0];
+  const book = books.filter((b) => b.id === id)[0];
 
   if (book !== undefined) {
     return {
@@ -122,7 +152,7 @@ const editBooksById = (request, h) => {
   const index = books.findIndex((book) => book.id === id);
 
   if (index !== -1) {
-    if (name === '') {
+    if (name === undefined) {
       const response = h.response({
         status: 'fail',
         message: 'Gagal memperbarui buku. Mohon isi nama buku',
@@ -144,8 +174,13 @@ const editBooksById = (request, h) => {
 
     if (pageCount === readPage) {
       finished = true;
+    } else {
+      finished = false;
     }
-    const updatedAt = new Date().toISOString;
+
+    const insertedAt = new Date().toISOString();
+    const updatedAt = insertedAt;
+
     books[index] = {
       ...books[index],
       name,
